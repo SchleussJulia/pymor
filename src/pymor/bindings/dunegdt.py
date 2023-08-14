@@ -178,7 +178,7 @@ class DuneXTMatrixOperator(LinearComplexifiedListVectorArrayOperatorBase):
         self.matrix.mv(u.impl, r.impl)
         return r
 
-    def _apply_adjoint_one_vector(self, v, mu=None, prepare_data=None):
+    def _real_apply_adjoint_one_vector(self, v, mu=None, prepare_data=None):
         r = self.source.real_zero_vector()
         self.matrix.mtv(v.impl, r.impl)
         return r
