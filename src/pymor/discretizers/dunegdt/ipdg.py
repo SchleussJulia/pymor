@@ -479,14 +479,17 @@ if config.HAVE_DUNEGDT:
             return 'SIPDG' if weight_parameter is None else 'SWIPDG'
 
 
-    def _IP_estimate_penalty_parameter(grid, space, symmetry_factor, diffusion_min_max_parametric_part):
+    def _IP_estimate_penalty_parameter(grid, space, symmetry_factor, diffusion_min_max_parametric_part=None):
         if symmetry_factor == -1:  # NIPDG
             return 1  # any positive number will do (the smaller the better)
         else:
             # TODO: each is a grid walk, compute this in one grid walk with the sparsity pattern
             C_G = estimate_element_to_intersection_equivalence_constant(grid)
             C_M_times_1_plus_C_T = estimate_combined_inverse_trace_inequality_constant(space)
-            penalty_parameter = C_G * C_M_times_1_plus_C_T * diffusion_min_max_parametric_part[1]**2 / diffusion_min_max_parametric_part[0]
+            if diffusion_min_max_parametric_part is not None:
+                penalty_parameter = C_G * C_M_times_1_plus_C_T * diffusion_min_max_parametric_part[1]**2 / diffusion_min_max_parametric_part[0]
+            else:
+                penalty_parameter = C_G * C_M_times_1_plus_C_T
             if symmetry_factor == 1:  # SIPDG or SWIPDG
                 penalty_parameter *= 4
             return penalty_parameter
