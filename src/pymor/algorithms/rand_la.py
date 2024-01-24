@@ -17,7 +17,8 @@ from pymor.operators.interface import Operator
 
 @defaults('tol', 'failure_tolerance', 'num_testvecs')
 def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
-                 failure_tolerance=1e-15, num_testvecs=20, lambda_min=None, iscomplex=False):
+                 failure_tolerance=1e-15, without_estimation = False, num_solvecs=3,
+                 num_testvecs=20, lambda_min=None, iscomplex=False):
     r"""Adaptive randomized range approximation of `A`.
 
     This is an implementation of Algorithm 1 in :cite:`BS18`.
@@ -63,36 +64,42 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
 
     B = A.range.empty()
 
-    R = A.source.random(num_testvecs, distribution='normal')
-    if iscomplex:
-        R += 1j*A.source.random(num_testvecs, distribution='normal')
-
-    if source_product is None:
-        lambda_min = 1
-    elif lambda_min is None:
-        def mv(v):
-            return source_product.apply(source_product.source.from_numpy(v)).to_numpy()
-
-        def mvinv(v):
-            return source_product.apply_inverse(source_product.range.from_numpy(v)).to_numpy()
-        L = LinearOperator((source_product.source.dim, source_product.range.dim), matvec=mv)
-        Linv = LinearOperator((source_product.range.dim, source_product.source.dim), matvec=mvinv)
-        lambda_min = eigsh(L, sigma=0, which='LM', return_eigenvectors=False, k=1, OPinv=Linv)[0]
-
-    testfail = failure_tolerance / min(A.source.dim, A.range.dim)
-    testlimit = np.sqrt(2. * lambda_min) * erfinv(testfail**(1. / num_testvecs)) * tol
-    maxnorm = np.inf
-    M = A.apply(R)
-
-    while maxnorm > testlimit:
-        basis_length = len(B)
-        v = A.source.random(distribution='normal')
-        if iscomplex:
-            v += 1j*A.source.random(distribution='normal')
+    if without_estimation:
+        v = A.source.random(num_solvecs, distribution='normal')
         B.append(A.apply(v))
-        gram_schmidt(B, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
-        M -= B.lincomb(B.inner(M, range_product).T)
-        maxnorm = np.max(M.norm(range_product))
+        gram_schmidt(B, range_product, atol=0, rtol=0, copy=False)
+
+    else:
+        R = A.source.random(num_testvecs, distribution='normal')
+        if iscomplex:
+            R += 1j*A.source.random(num_testvecs, distribution='normal')
+
+        if source_product is None:
+            lambda_min = 1
+        elif lambda_min is None:
+            def mv(v):
+                return source_product.apply(source_product.source.from_numpy(v)).to_numpy()
+
+            def mvinv(v):
+                return source_product.apply_inverse(source_product.range.from_numpy(v)).to_numpy()
+            L = LinearOperator((source_product.source.dim, source_product.range.dim), matvec=mv)
+            Linv = LinearOperator((source_product.range.dim, source_product.source.dim), matvec=mvinv)
+            lambda_min = eigsh(L, sigma=0, which='LM', return_eigenvectors=False, k=1, OPinv=Linv)[0]
+
+        testfail = failure_tolerance / min(A.source.dim, A.range.dim)
+        testlimit = np.sqrt(2. * lambda_min) * erfinv(testfail**(1. / num_testvecs)) * tol
+        maxnorm = np.inf
+        M = A.apply(R)
+
+        while maxnorm > testlimit:
+            basis_length = len(B)
+            v = A.source.random(distribution='normal')
+            if iscomplex:
+                v += 1j*A.source.random(distribution='normal')
+            B.append(A.apply(v))
+            gram_schmidt(B, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
+            M -= B.lincomb(B.inner(M, range_product).T)
+            maxnorm = np.max(M.norm(range_product))
 
     return B
 
