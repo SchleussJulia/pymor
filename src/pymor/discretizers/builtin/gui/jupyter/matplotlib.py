@@ -99,6 +99,8 @@ def visualize_patch(grid, U, bounding_box=None, codim=2, title=None, legend=None
         plt.close(fig)
         return anim
     else:
+        #ax.set_aspect('equal')
+        #plt.savefig('test.png', dpi=500)
         plt.show()
 
 
