@@ -63,6 +63,8 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
     assert isinstance(A, Operator)
 
     B = A.range.empty()
+    ### temporary adjustment to be able to plot local solutions with random boundary conditions:
+    #B_direct = A.fake_source.empty()
 
     if without_estimation:
         v = A.source.random(num_solvecs, distribution='normal')
@@ -91,19 +93,20 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
         testfail = failure_tolerance / min(A.source_dim, A.range.dim)
         testlimit = np.sqrt(2. * lambda_min) * erfinv(testfail**(1. / num_testvecs)) * tol
         maxnorm = np.inf
-        M = A.apply(R)
+        M = A.apply(R)[0]
 
         while maxnorm > testlimit:
             basis_length = len(B)
             v = A.source.random(distribution='normal')
             if iscomplex:
                 v += 1j*A.source.random(distribution='normal')
-            B.append(A.apply(v))
+            B.append(A.apply(v)[0])
+            #B_direct.append(A.apply(v)[1][0])
             gram_schmidt(B, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
             M -= B.lincomb(B.inner(M, range_product).T)
             maxnorm = np.max(M.norm(range_product))
-
-    return B
+        #B_orth = gram_schmidt(B_direct,copy = True)
+    return B #, B_direct, B_orth
 
 
 @defaults('q', 'l')
