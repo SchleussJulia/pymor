@@ -188,17 +188,23 @@ class AssembleLincombRules(RuleTable):
         merged_coords = np.unique(np.hstack([op.blocks.coords for op in ops]), axis=1)
         if len(ops) > 1:
             for (i, j) in zip(merged_coords[0], merged_coords[1]):
-                operators_ij = [op.blocks[i, j] for op in ops if op.blocks[i, j]]
-                blocks[i, j] = assemble_lincomb(operators_ij, coefficients,
+                operators_ij = []
+                coefficients_ij = []
+                for op, op_coeff in zip(ops,coefficients):
+                    if op.blocks[i,j]:
+                        operators_ij.append(op.blocks[i,j])
+                        coefficients_ij.append(op_coeff)
+                blocks[i, j] = assemble_lincomb(operators_ij, coefficients_ij,
                                                 solver_options=self.solver_options, name=self.name)
             return operator_type(blocks)
         else:
             c = coefficients[0]
             if c == 1:
                 return ops[0]
-            for (i, j) in zip(ops[0].block_coords[0], ops[0].block_coords[1]):
+            for (i, j) in zip(merged_coords[0], merged_coords[1]):
                 blocks[i, j] = ops[0].blocks[i, j] * c
             return operator_type(blocks)
+
 
     @match_generic(lambda ops: sum(1 for op in ops if isinstance(op, LowRankOperator)) >= 2)
     def action_merge_low_rank_operators(self, ops):
