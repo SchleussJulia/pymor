@@ -277,7 +277,7 @@ class InstationaryModel(Model):
 
     _compute_allowed_kwargs = frozenset({'return_error_sequence'})
 
-    def __init__(self, T, initial_data, operator, rhs, mass=None, time_stepper=None, num_values=None,
+    def __init__(self, T, initial_data, operator, rhs, initial_time=0., mass=None, time_stepper=None, num_values=None,
                  output_functional=None, products=None, error_estimator=None, visualizer=None, name=None):
 
         if isinstance(rhs, VectorArray):
@@ -327,13 +327,13 @@ class InstationaryModel(Model):
         return self.with_(time_stepper=self.time_stepper.with_(**kwargs))
 
     def _compute_solution(self, mu=None, **kwargs):
-        mu = mu.with_(t=0.)
+        mu = mu.with_(t=self.initial_time) #mu.with_(t=0.)
         U0 = self.initial_data.as_range_array(mu)
         U = self.time_stepper.solve(operator=self.operator,
                                     rhs=None if isinstance(self.rhs, ZeroOperator) else self.rhs,
                                     initial_data=U0,
                                     mass=None if isinstance(self.mass, IdentityOperator) else self.mass,
-                                    initial_time=0, end_time=self.T, mu=mu, num_values=self.num_values)
+                                    initial_time=self.initial_time, end_time=self.T, mu=mu, num_values=self.num_values)
         return U
 
     def to_lti(self):
