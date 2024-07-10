@@ -1149,7 +1149,7 @@ def discretize_stationary_cg(analytical_problem, diameter=None, domain_discretiz
     Prod = L2ProductQ1 if grid.reference_element is square else L2ProductP1
     empty_bi = EmptyBoundaryInfo(grid)
     l2_product = Prod(grid, empty_bi, name='l2')
-    l2_0_product = Prod(grid, boundary_info, dirichlet_clear_columns=True, name='l2_0')
+    l2_0_product = Prod(grid, boundary_info, dirichlet_clear_columns=True, dirichlet_clear_diag=True, name='l2_0')
     h1_semi_product = DiffusionOperator(grid, empty_bi, name='h1_semi')
     h1_0_semi_product = DiffusionOperator(grid, boundary_info, dirichlet_clear_columns=True, name='h1_0_semi')
     products = {'h1': l2_product + h1_semi_product,
