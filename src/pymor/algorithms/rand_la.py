@@ -90,17 +90,17 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
 
         #testfail = failure_tolerance / min(A.source.dim, A.range.dim)
         # temporary custom adjustment:
-        testfail = failure_tolerance / min(A.source_dim, A.range.dim)
+        testfail = failure_tolerance / min(A.source_dim, A.range_dim)
         testlimit = np.sqrt(2. * lambda_min) * erfinv(testfail**(1. / num_testvecs)) * tol
         maxnorm = np.inf
-        M = A.apply(R)[0]
+        M = A.apply(R)#[0]
 
         while maxnorm > testlimit:
             basis_length = len(B)
             v = A.source.random(distribution='normal')
             if iscomplex:
                 v += 1j*A.source.random(distribution='normal')
-            B.append(A.apply(v)[0])
+            B.append(A.apply(v))#[0])
             #B_direct.append(A.apply(v)[1][0])
             gram_schmidt(B, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
             M -= B.lincomb(B.inner(M, range_product).T)
