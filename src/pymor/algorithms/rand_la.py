@@ -69,7 +69,7 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
     if without_estimation:
         v = A.source.random(num_solvecs, distribution='normal')
         B.append(A.apply(v))
-        gram_schmidt(B, range_product, atol=0, rtol=0, copy=False)
+        # gram_schmidt(B, range_product, atol=0, rtol=0, copy=False)
 
     else:
         R = A.source.random(num_testvecs, distribution='normal')
