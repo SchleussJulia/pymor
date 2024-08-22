@@ -18,7 +18,7 @@ from pymor.operators.interface import Operator
 @defaults('tol', 'failure_tolerance', 'num_testvecs')
 def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
                  failure_tolerance=1e-15, without_estimation = False, num_solvecs=3,
-                 num_testvecs=20, lambda_min=None, iscomplex=False):
+                 num_testvecs=20, lambda_min=None, iscomplex=False, hapod = False):
     r"""Adaptive randomized range approximation of `A`.
 
     This is an implementation of Algorithm 1 in :cite:`BS18`.
@@ -63,8 +63,7 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
     assert isinstance(A, Operator)
 
     B = A.range.empty()
-    ### temporary adjustment to be able to plot local solutions with random boundary conditions:
-    #B_direct = A.fake_source.empty()
+    B_orth = A.range.empty()
 
     if without_estimation:
         v = A.source.random(num_solvecs, distribution='normal')
@@ -96,17 +95,25 @@ def adaptive_rrf(A, source_product=None, range_product=None, tol=1e-4,
         M = A.apply(R)#[0]
 
         while maxnorm > testlimit:
-            basis_length = len(B)
+            basis_length = len(B_orth)
             v = A.source.random(distribution='normal')
             if iscomplex:
                 v += 1j*A.source.random(distribution='normal')
-            B.append(A.apply(v))#[0])
-            #B_direct.append(A.apply(v)[1][0])
-            gram_schmidt(B, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
-            M -= B.lincomb(B.inner(M, range_product).T)
+            snapshots = A.apply(v)
+            B.append(snapshots)#[0])
+            B_orth.append(snapshots)
+            gram_schmidt(B_orth, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
+            #gram_schmidt(B, range_product, atol=0, rtol=0, offset=basis_length, copy=False)
+            #M -= B.lincomb(B.inner(M, range_product).T)
+            M -= B_orth.lincomb(B_orth.inner(M, range_product).T)
             maxnorm = np.max(M.norm(range_product))
-        #B_orth = gram_schmidt(B_direct,copy = True)
-    return B #, B_direct, B_orth
+
+            print(maxnorm)
+            print()
+    if hapod:
+        return B
+    else:
+        return B_orth
 
 
 @defaults('q', 'l')
